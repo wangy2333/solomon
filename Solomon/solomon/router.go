@@ -53,7 +53,7 @@ func (r *Router) handleServer(c *Context) {
 		return
 	}
 	node, err := r.findRouter(c.Method, c.Path)
-	fmt.Println(node)
+	//fmt.Println(node)
 	if err != nil || node == nil {
 		fmt.Println("server err: ", err)
 		return

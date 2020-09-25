@@ -2,6 +2,7 @@ package solomon
 
 import (
 	"encoding/json"
+	"fastHTTP/Solomon/binding"
 	"fmt"
 	"unsafe"
 
@@ -10,11 +11,12 @@ import (
 
 type H map[string]interface{}
 type Context struct {
-	f          *fasthttp.RequestCtx
-	StatusCode int
-	Path       string
-	Method     string
-	Parameter  map[string]string
+	f           *fasthttp.RequestCtx
+	StatusCode  int
+	Path        string
+	Method      string
+	ContentType string
+	Parameter   map[string]string
 	//midWare
 	handles []handleFn
 	index   int
@@ -22,12 +24,13 @@ type Context struct {
 
 func newContext(f *fasthttp.RequestCtx) *Context {
 	return &Context{
-		f:         f,
-		Path:      byteToString(f.Path()),
-		Method:    byteToString(f.Method()),
-		Parameter: make(map[string]string),
-		handles:   make([]handleFn, 0),
-		index:     -1,
+		f:           f,
+		Path:        byteToString(f.Path()),
+		Method:      byteToString(f.Method()),
+		ContentType: byteToString(f.Request.Header.ContentType()),
+		Parameter:   make(map[string]string),
+		handles:     make([]handleFn, 0),
+		index:       -1,
 	}
 }
 
@@ -102,4 +105,14 @@ func (c *Context) Query(key string) string {
 func (c *Context) Param(key string) string {
 	value, _ := c.Parameter[key]
 	return value
+}
+
+//context 的shouldBind函数
+//根据传入的参数和contentType返回不同的实例调用接口中的方法bind
+func (c *Context) ShouldBind(obj interface{}) error {
+	b := binding.NewBind(c.Method, c.ContentType)
+	return c.shouldBindWith(obj, b)
+}
+func (c *Context) shouldBindWith(obj interface{}, b binding.Binder) error {
+	return b.Bind(c.f, obj)
 }
